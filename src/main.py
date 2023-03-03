@@ -20,7 +20,10 @@ def whats_new(session):
     soup = BeautifulSoup(response.text, features='lxml')
     main_div = find_tag(soup, 'section', attrs={'id': 'what-s-new-in-python'})
     div_with_ul = find_tag(main_div, 'div', attrs={'class': 'toctree-wrapper'})
-    sections_by_python = div_with_ul.find_all('li', attrs={'class': 'toctree-l1'})
+    sections_by_python = div_with_ul.find_all(
+        'li',
+        attrs={'class': 'toctree-l1'}
+    )
     results = [('Ссылка на статью', 'Заголовок', 'Редактор, Автор')]
     for section in tqdm(sections_by_python):
         version_a_tag = section.find('a')
@@ -44,7 +47,7 @@ def latest_versions(session):
     if response is None:
         return
     soup = BeautifulSoup(response.text, 'lxml')
-    sidebar = soup.find('div', {'class':'sphinxsidebarwrapper'})
+    sidebar = soup.find('div', {'class': 'sphinxsidebarwrapper'})
     for ul in sidebar.find_all('ul'):
         if 'All version' in ul.text:
             a_tags = ul.find_all('a')
@@ -56,10 +59,10 @@ def latest_versions(session):
     for a_tag in a_tags:
         link = a_tag['href']
         text_match = re.search(pattern, a_tag.text)
-        if text_match is not None:  
+        if text_match is not None:
             version, status = text_match.groups()
-        else:  
-            version, status = a_tag.text, ''  
+        else:
+            version, status = a_tag.text, ''
         results.append(
             (link, version, status)
         )
@@ -71,7 +74,11 @@ def download(session):
     response = get_response(session, downloads_url)
     soup = BeautifulSoup(response.text, 'lxml')
     urls_table = find_tag(soup, 'table', attrs={'class': 'docutils'})
-    pdf_a4_tag = find_tag(urls_table, 'a', {'href': re.compile(r'.+pdf-a4\.zip$')})
+    pdf_a4_tag = find_tag(
+        urls_table,
+        'a',
+        {'href': re.compile(r'.+pdf-a4\.zip$')}
+    )
     pdf_a4_link = pdf_a4_tag['href']
     archive_url = urljoin(downloads_url, pdf_a4_link)
     filename = archive_url.split('/')[-1]
@@ -107,7 +114,7 @@ def pep(session):
             logging.info(f'Неизвестный ключ статуса: \'{status_table}\'')
         if status_page not in expected_status:
             logs.append(
-                '\Несовпадающие статусы:\n'
+                'Несовпадающие статусы:\n'
                 f'{link}\n'
                 f'Статус в карточке: {status_page}\n'
                 f'Ожидаемые статусы: {EXPECTED_STATUS[status_table]}'
