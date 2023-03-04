@@ -9,9 +9,8 @@ from tqdm import tqdm
 from configs import configure_argument_parser, configure_logging
 from constants import (BASE_DIR, DOWNLOADS, EXPECTED_STATUS, MAIN_DOC_URL,
                        PEP_URL)
-from exceptions import Deferred
 from outputs import control_output
-from utils import find_tag, get_soup
+from utils import find_tag, get_soup, Deferred
 
 RESPONSE_LOG_ERROR = 'Ошибка при загрузке страницы {version_link}'
 DOWLOAD_INFO = 'Архив был загружен и сохранён: {archive_path}'
@@ -26,7 +25,6 @@ NOT_EXPECTED_STATUS = 'Неизвестный ключ статуса: \'{status
 def whats_new(session):
     deffered = Deferred()
     whats_new_url = urljoin(MAIN_DOC_URL, 'whatsnew/')
-    soup = get_soup(session, whats_new_url)
     results = [('Ссылка на статью', 'Заголовок', 'Редактор, Автор')]
     for section in tqdm(
       get_soup(
@@ -48,6 +46,7 @@ def whats_new(session):
         results.append(
             (version_link, h1.text, dl_text)
         )
+    deffered.log(logging.warning)
     return results
 
 
@@ -96,7 +95,6 @@ def download(session):
 
 
 def pep(session):
-    deffered = Deferred()
     soup = get_soup(session, PEP_URL)
     section = find_tag(soup, 'section', attrs={'id': 'numerical-index'})
     table = find_tag(section, 'table', attrs={'class': 'pep-zero-table'})
@@ -104,7 +102,7 @@ def pep(session):
     tr = tbody.find_all('tr')
     logs = []
     result = [('Статус', 'Количество')]
-    count_pep = defaultdict(int)
+    count_peps = defaultdict(int)
     for item in tqdm(tr):
         td = find_tag(item, 'td')
         link = urljoin(PEP_URL, td.find_next_sibling().a['href'])
@@ -112,7 +110,7 @@ def pep(session):
         try:
             soup = get_soup(session, link)
         except ConnectionError:
-            logging.add_message(
+            logs.append(
                 RESPONSE_LOG_ERROR.format(version_link=link)
             )
             continue
@@ -120,9 +118,9 @@ def pep(session):
         status_page = dl.find(string='Status').parent.find_next_sibling().text
         expected_status = EXPECTED_STATUS.get(status_table, [])
         if not expected_status:
-            deffered.info(NOT_EXPECTED_STATUS.format(
+            logs.append(NOT_EXPECTED_STATUS.format(
                 status_table=status_table))
-        count_pep[status_page] += 1
+        count_peps[status_page] += 1
     for log in logs:
         logging.info(log)
     return [

@@ -8,6 +8,18 @@ GET_RESPONSE = 'Возникла ошибка при загрузке стран
 FIND_TAG_ERROR = 'Не найден тег {tag} {attrs}'
 
 
+class Deferred:
+    def __init__(self):
+        self.messages = []
+
+    def add_message(self, message):
+        self.messages.append(message)
+
+    def log(self, logger):
+        for error_message in self.messages:
+            logger(error_message)
+
+
 def get_response(session, url, encoding=ENCODING_UTF8):
     try:
         response = session.get(url)
