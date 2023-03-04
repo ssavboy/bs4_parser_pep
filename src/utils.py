@@ -1,17 +1,17 @@
 from bs4 import BeautifulSoup
 from requests import RequestException
 
-from constants import ENCODING
+from constants import ENCODING_UTF8
 from exceptions import ParserFindTagException
 
 GET_RESPONSE = 'Возникла ошибка при загрузке страницы {url}'
 FIND_TAG_ERROR = 'Не найден тег {tag} {attrs}'
 
 
-def get_response(session, url):
+def get_response(session, url, encoding=ENCODING_UTF8):
     try:
         response = session.get(url)
-        response.encoding = ENCODING
+        response.encoding = encoding
         return response
     except RequestException:
         raise ConnectionError(

@@ -9,33 +9,39 @@ from tqdm import tqdm
 from configs import configure_argument_parser, configure_logging
 from constants import (BASE_DIR, DOWNLOADS, EXPECTED_STATUS, MAIN_DOC_URL,
                        PEP_URL)
+from exceptions import Deferred
 from outputs import control_output
-from utils import find_tag, get_response, get_soup
+from utils import find_tag, get_soup
 
 RESPONSE_LOG_ERROR = 'Ошибка при загрузке страницы {version_link}'
 DOWLOAD_INFO = 'Архив был загружен и сохранён: {archive_path}'
 ARGUMENTS_CLI = 'Аргументы командной строки: {args}'
 PARSER_ERROR = 'Ошибка в работе парсера: {error}'
+NOT_BE_FOUND = 'Значение не нашлось.'
+STARTER_PARSER = 'Парсер запущен!'
+ENDING_PARSER = 'Парсер завершил работу.'
+NOT_EXPECTED_STATUS = 'Неизвестный ключ статуса: \'{status_table}\''
 
 
 def whats_new(session):
+    deffered = Deferred()
     whats_new_url = urljoin(MAIN_DOC_URL, 'whatsnew/')
     soup = get_soup(session, whats_new_url)
-    sections_by_python = soup.select(
-        '#what-s-new-in-python div.toctree-wrapper li.toctree-l1'
-    )
     results = [('Ссылка на статью', 'Заголовок', 'Редактор, Автор')]
-    for section in tqdm(sections_by_python):
-        version_a_tag = section.find('a')
-        href = version_a_tag['href']
-        version_link = urljoin(whats_new_url, href)
-        response = get_response(session, version_link)
-        if response is None:
-            logging.add_message(
+    for section in tqdm(
+      get_soup(
+        session, whats_new_url
+      ).select(
+        '#what-s-new-in-python div.toctree-wrapper li.toctree-l1 > a'
+      )
+    ):
+        version_link = urljoin(whats_new_url, section['href'])
+        try:
+            soup = get_soup(session, version_link)
+        except ConnectionError:
+            deffered.add_message(
                 RESPONSE_LOG_ERROR.format(version_link=version_link)
             )
-            continue
-        soup = get_soup(session, version_link)
         h1 = find_tag(soup, 'h1')
         dl = soup.find('dl')
         dl_text = dl.text.replace('\n', ' ')
@@ -46,9 +52,6 @@ def whats_new(session):
 
 
 def latest_versions(session):
-    response = get_response(session, MAIN_DOC_URL)
-    if response is None:
-        return
     soup = get_soup(session, MAIN_DOC_URL)
     sidebar = soup.find('div', {'class': 'sphinxsidebarwrapper'})
     for ul in sidebar.find_all('ul'):
@@ -56,7 +59,7 @@ def latest_versions(session):
             a_tags = ul.find_all('a')
             break
     else:
-        raise ValueError('Значение не нашлось.')
+        raise ValueError(NOT_BE_FOUND)
     results = [('Ссылка на документацию', 'Версия', 'Статус')]
     pattern = r'Python (?P<version>\d\.\d+) \((?P<status>.*)\)'
     for a_tag in a_tags:
@@ -93,6 +96,7 @@ def download(session):
 
 
 def pep(session):
+    deffered = Deferred()
     soup = get_soup(session, PEP_URL)
     section = find_tag(soup, 'section', attrs={'id': 'numerical-index'})
     table = find_tag(section, 'table', attrs={'class': 'pep-zero-table'})
@@ -116,9 +120,11 @@ def pep(session):
         status_page = dl.find(string='Status').parent.find_next_sibling().text
         expected_status = EXPECTED_STATUS.get(status_table, [])
         if not expected_status:
-            logging.info(f'Неизвестный ключ статуса: \'{status_table}\'')
+            deffered.info(NOT_EXPECTED_STATUS.format(
+                status_table=status_table))
         count_pep[status_page] += 1
-    map(logging.info, logs)
+    for log in logs:
+        logging.info(log)
     return [
         ('Статус', 'Количество'),
         *result.items(),
@@ -136,7 +142,7 @@ MODE_TO_FUNCTION = {
 
 def main():
     configure_logging()
-    logging.info('Парсер запущен!')
+    logging.info(STARTER_PARSER)
     arg_parser = configure_argument_parser(MODE_TO_FUNCTION.keys())
     args = arg_parser.parse_args()
     logging.info(ARGUMENTS_CLI.format(args=args))
@@ -152,7 +158,7 @@ def main():
         logging.exception(
             PARSER_ERROR.format(error=error)
         )
-    logging.info('Парсер завершил работу.')
+    logging.info(ENDING_PARSER)
 
 
 if __name__ == '__main__':

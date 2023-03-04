@@ -6,14 +6,14 @@ PEP_URL = 'https://peps.python.org/'
 DT_FORMAT = '%d.%m.%Y %H:%M:%S'
 DATETIME_FORMAT = '%Y-%m-%d_%H-%M-%S'
 LOG_FORMAT = '"%(asctime)s - [%(levelname)s] - %(message)s"'
-ENCODING = 'utf-8'
+ENCODING_UTF8 = 'utf-8'
 RESULTS = 'results'
 DOWNLOADS = 'downloads'
-PRETTY = 'pretty'
-FILE = 'file'
+PRETTY_FORMAT = 'pretty'
+FILE_FORMAT = 'file'
 LOGS = 'logs'
 PARSER_FILE = 'parser.log'
-DEFAULT = None
+DEFAULT_FORMAT = None
 EXPECTED_STATUS = {
     'A': ('Active', 'Accepted'),
     'D': ('Deferred',),
