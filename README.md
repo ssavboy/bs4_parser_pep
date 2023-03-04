@@ -36,3 +36,13 @@
     ```
     python main.py <mode> [option]
     ```
+
+## Стэк технологии
+- Python 3.7
+- Logging
+- <a href='https://pypi.org/project/requests/'>Requests</a> 
+- <a href='https://pypi.org/project/requests-cache/'>Requests-Cache</a> 
+- <a href='https://pypi.org/project/beautifulsoup4/'>BeautifulSoup4</a>
+- <a href='https://pypi.org/project/prettytable/'>Prettytable</a>
+
+## Автор: <a href='https://github.com/ssavboy'>Kirill Molchanov</a>
