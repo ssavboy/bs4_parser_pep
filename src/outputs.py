@@ -33,9 +33,9 @@ def file_output(results, cli_args):
     file_path = results_dir / file_name
     with open(file_path, 'w', encoding=ENCODING_UTF8) as f:
         csv.writer(
-          f, dialect=csv.unix_dialect,
+            f, dialect=csv.unix_dialect,
         ).writerows(
-          results,
+            results,
         )
     logging.info(FILE_OUTPUT_INFO.format(file_path=file_path))
 

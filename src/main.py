@@ -101,7 +101,6 @@ def pep(session):
     tbody = find_tag(table, 'tbody')
     tr = tbody.find_all('tr')
     logs = []
-    result = [('Статус', 'Количество')]
     count_peps = defaultdict(int)
     for item in tqdm(tr):
         td = find_tag(item, 'td')
@@ -125,8 +124,8 @@ def pep(session):
         logging.info(log)
     return [
         ('Статус', 'Количество'),
-        *result.items(),
-        ('Всего', sum(result.values())),
+        *count_peps.items(),
+        ('Всего', sum(count_peps.values())),
     ]
 
 
